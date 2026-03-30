@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, TaskType } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
@@ -7,15 +7,23 @@ export const geminiFlash = genAI.getGenerativeModel({
   model: "gemini-1.5-flash",
 });
 
-// text-embedding-004 is the current stable alias for embedding-001
+// text-embedding-004 (embedding-001 compatible, 768-dim output)
 export const geminiEmbedding = genAI.getGenerativeModel({
   model: "text-embedding-004",
 });
 
 /**
- * Embed a single string and return the float array.
+ * Embed text with optional task type.
+ * - RETRIEVAL_DOCUMENT  → for indexing document chunks
+ * - RETRIEVAL_QUERY     → for embedding search queries
  */
-export async function embedText(text: string): Promise<number[]> {
-  const result = await geminiEmbedding.embedContent(text);
+export async function embedText(
+  text: string,
+  taskType: TaskType = TaskType.RETRIEVAL_DOCUMENT
+): Promise<number[]> {
+  const result = await geminiEmbedding.embedContent({
+    content: { parts: [{ text }], role: "user" },
+    taskType,
+  });
   return result.embedding.values;
 }

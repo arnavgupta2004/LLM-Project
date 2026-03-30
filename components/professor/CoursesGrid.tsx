@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import CreateCourseDialog from "./CreateCourseDialog";
 
 interface Course {
@@ -69,8 +70,9 @@ export default function CoursesGrid({ courses, professorId }: Props) {
             const enrolled = course.enrollments?.[0]?.count ?? 0;
             const level = course.difficulty_level ?? "undergraduate";
             return (
-              <div
+              <Link
                 key={course.id}
+                href={`/dashboard/professor/courses/${course.id}`}
                 className="rounded-2xl border bg-white p-5 flex flex-col gap-4 hover:shadow-md transition-shadow cursor-pointer"
                 style={{ borderColor: "#e5eaf5" }}
               >
@@ -118,7 +120,7 @@ export default function CoursesGrid({ courses, professorId }: Props) {
                     </span>
                   </div>
                 </div>
-              </div>
+              </Link>
             );
           })}
         </div>
