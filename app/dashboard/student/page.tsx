@@ -23,8 +23,7 @@ export default async function StudentCoursesPage() {
   const { data: enrollments } = await supabase
     .from("enrollments")
     .select("course_id")
-    .eq("student_id", user.id)
-    .order("created_at", { ascending: false });
+    .eq("student_id", user.id);
 
   const courseIds = (enrollments ?? []).map((e) => e.course_id).filter(Boolean);
 

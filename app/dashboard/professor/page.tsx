@@ -10,11 +10,29 @@ export default async function ProfessorCoursesPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/auth");
 
-  const { data: courses } = await supabase
+  const { data: rawCourses } = await supabase
     .from("courses")
-    .select("id, name, code, credits, difficulty_level, enrollments(count)")
+    .select("id, name, code, credits, difficulty_level")
     .eq("prof_id", user.id)
     .order("created_at", { ascending: false });
+
+  // Fetch enrollment counts separately (no FK needed)
+  const courseIds = (rawCourses ?? []).map((c) => c.id);
+  let enrollmentCounts: Record<string, number> = {};
+  if (courseIds.length > 0) {
+    const { data: enrollments } = await supabase
+      .from("enrollments")
+      .select("course_id")
+      .in("course_id", courseIds);
+    for (const e of enrollments ?? []) {
+      enrollmentCounts[e.course_id] = (enrollmentCounts[e.course_id] ?? 0) + 1;
+    }
+  }
+
+  const courses = (rawCourses ?? []).map((c) => ({
+    ...c,
+    enrollments: [{ count: enrollmentCounts[c.id] ?? 0 }],
+  }));
 
   return (
     <div className="p-8">
