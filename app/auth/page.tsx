@@ -102,12 +102,17 @@ export default function AuthPage() {
         <div className="relative z-10 flex flex-col justify-between h-full">
           {/* Logo */}
           <div className="flex items-center gap-3">
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center font-extrabold text-lg shadow-lg"
-              style={{ background: "#c9a84c", color: "#1a2b5e" }}
-            >
-              E
-            </div>
+            <a href="https://iiitdwd.ac.in" target="_blank" rel="noopener noreferrer">
+              <div className="w-10 h-10 rounded-xl overflow-hidden bg-white flex items-center justify-center shadow-lg p-1 hover:scale-105 transition-transform">
+                <Image
+                  src="/IIIT-Dharwad-Logo.png"
+                  alt="IIIT Dharwad"
+                  width={36}
+                  height={36}
+                  className="object-contain"
+                />
+              </div>
+            </a>
             <span className="text-white font-bold text-xl tracking-tight">EduAI</span>
           </div>
 
@@ -155,12 +160,17 @@ export default function AuthPage() {
       <div className="flex-1 flex flex-col items-center justify-center bg-white px-6 py-12">
         {/* Mobile logo */}
         <div className="flex lg:hidden items-center gap-2 mb-10">
-          <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center font-extrabold"
-            style={{ background: "#1a2b5e", color: "#c9a84c" }}
-          >
-            E
-          </div>
+          <a href="https://iiitdwd.ac.in" target="_blank" rel="noopener noreferrer">
+            <div className="w-9 h-9 rounded-xl overflow-hidden bg-white flex items-center justify-center p-1 shadow hover:scale-105 transition-transform">
+              <Image
+                src="/IIIT-Dharwad-Logo.png"
+                alt="IIIT Dharwad"
+                width={32}
+                height={32}
+                className="object-contain"
+              />
+            </div>
+          </a>
           <span className="font-bold text-xl" style={{ color: "#1a2b5e" }}>EduAI</span>
         </div>
 
