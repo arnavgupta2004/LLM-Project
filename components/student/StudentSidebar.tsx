@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 
@@ -36,11 +37,14 @@ export default function StudentSidebar({ fullName }: Props) {
       {/* Brand */}
       <div className="px-6 py-5 border-b border-white/10">
         <div className="flex items-center gap-2.5">
-          <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center font-extrabold text-sm"
-            style={{ background: "#c9a84c", color: "#1a2b5e" }}
-          >
-            E
+          <div className="w-8 h-8 rounded-lg overflow-hidden bg-white flex items-center justify-center p-0.5 shadow">
+            <Image
+              src="/IIIT-Dharwad-Logo.png"
+              alt="IIIT Dharwad"
+              width={28}
+              height={28}
+              className="object-contain"
+            />
           </div>
           <div>
             <p className="text-white font-bold text-sm leading-none">EduAI</p>
