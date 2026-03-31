@@ -18,7 +18,7 @@ export default async function ProfessorCoursesPage() {
 
   // Fetch enrollment counts separately (no FK needed)
   const courseIds = (rawCourses ?? []).map((c) => c.id);
-  let enrollmentCounts: Record<string, number> = {};
+  const enrollmentCounts: Record<string, number> = {};
   if (courseIds.length > 0) {
     const { data: enrollments } = await supabase
       .from("enrollments")

@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
         .from("course_materials")
         .insert({
           course_id: courseId,
-          name: file.name,
+          file_name: file.name,
           file_path: storagePath,
           file_type: file.type,
           file_size: file.size,

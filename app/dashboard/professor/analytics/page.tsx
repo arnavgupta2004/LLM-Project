@@ -31,7 +31,7 @@ export default async function AnalyticsPage() {
   const courseIds = courses.map((c) => c.id);
 
   // Fetch all data in parallel
-  const [enrollmentsResult, chatsResult, submissionsResult, strugglesResult] =
+  const [enrollmentsResult, chatsResult, submissionsResult] =
     await Promise.all([
       supabaseAdmin
         .from("enrollments")
@@ -49,15 +49,6 @@ export default async function AnalyticsPage() {
         .select("course_id, student_id, overall_score")
         .in("course_id", courseIds)
         .not("overall_score", "is", null),
-
-      supabaseAdmin
-        .from("student_topic_struggles")
-        .select("student_id, topic, count")
-        .in(
-          "student_id",
-          // Will be re-filtered below; fetch broadly for now
-          []
-        ),
     ]);
 
   const enrollments = enrollmentsResult.data ?? [];

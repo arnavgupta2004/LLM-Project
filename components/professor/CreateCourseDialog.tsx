@@ -385,7 +385,7 @@ export default function CreateCourseDialog({ open, onOpenChange, professorId }: 
           difficulty_level: finalForm.difficulty_level,
           assessment_weights: finalForm.assessment_weights,
           attendance_policy: finalForm.attendance_policy,
-          rubric_criteria: rubric.map(({ id: _id, ...rest }) => rest),
+          rubric_criteria: rubric.map(({ id: _, ...rest }) => rest),
         })
         .select("id")
         .single();

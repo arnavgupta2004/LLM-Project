@@ -7,11 +7,11 @@ import { useRouter } from "next/navigation";
 
 interface Material {
   id: string;
-  name: string;
+  file_name: string;
   file_type: string;
   file_size: number;
   indexed: boolean;
-  created_at: string;
+  uploaded_at: string;
 }
 
 interface UploadState {
@@ -92,7 +92,7 @@ export default function MaterialsSection({ courseId, initialMaterials }: Props) 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const [upload, setUpload] = useState<UploadState | null>(null);
-  const [materials, setMaterials] = useState<Material[]>(initialMaterials);
+  const [materials] = useState<Material[]>(initialMaterials);
   const [fileError, setFileError] = useState("");
 
   const processFile = useCallback(
@@ -317,10 +317,10 @@ export default function MaterialsSection({ courseId, initialMaterials }: Props) 
                   className="text-sm font-medium truncate"
                   style={{ color: "#1a2b5e" }}
                 >
-                  {mat.name}
+                  {mat.file_name}
                 </p>
                 <p className="text-xs text-gray-400 mt-0.5">
-                  {humanSize(mat.file_size)} · {humanDate(mat.created_at)}
+                  {humanSize(mat.file_size)} · {humanDate(mat.uploaded_at)}
                 </p>
               </div>
 

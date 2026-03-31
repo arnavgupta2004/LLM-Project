@@ -32,9 +32,9 @@ export default async function CourseDetailPage({ params }: Props) {
   const [materialsResult, submissionsResult] = await Promise.all([
     supabase
       .from("course_materials")
-      .select("id, name, file_type, file_size, indexed, created_at")
+      .select("id, file_name, file_type, file_size, indexed, uploaded_at")
       .eq("course_id", courseId)
-      .order("created_at", { ascending: false }),
+      .order("uploaded_at", { ascending: false }),
 
     // Use admin client to read all students' submissions
     supabaseAdmin

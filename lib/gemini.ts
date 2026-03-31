@@ -8,7 +8,7 @@ export const geminiFlash = genAI.getGenerativeModel({
 
 // text-embedding-004 (768-dim output)
 export const geminiEmbedding = genAI.getGenerativeModel({
-  model: "text-embedding-004",
+  model: "models/text-embedding-004",
 });
 
 /**
