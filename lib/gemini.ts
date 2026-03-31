@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI, TaskType } from "@google/generative-ai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
@@ -6,23 +6,31 @@ export const geminiFlash = genAI.getGenerativeModel({
   model: "gemini-2.0-flash",
 });
 
-// text-embedding-004 (768-dim output)
-export const geminiEmbedding = genAI.getGenerativeModel({
-  model: "models/text-embedding-004",
-});
-
 /**
- * Embed text with optional task type.
+ * Embed text using text-embedding-004 via the v1 REST API directly.
+ * (The JS SDK defaults to v1beta where this model is unavailable.)
  * - RETRIEVAL_DOCUMENT  → for indexing document chunks
  * - RETRIEVAL_QUERY     → for embedding search queries
  */
 export async function embedText(
   text: string,
-  taskType: TaskType = TaskType.RETRIEVAL_DOCUMENT
+  taskType: "RETRIEVAL_DOCUMENT" | "RETRIEVAL_QUERY" = "RETRIEVAL_DOCUMENT"
 ): Promise<number[]> {
-  const result = await geminiEmbedding.embedContent({
-    content: { parts: [{ text }], role: "user" },
-    taskType,
+  const apiKey = process.env.GEMINI_API_KEY!;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key=${apiKey}`;
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "models/gemini-embedding-001",
+      content: { parts: [{ text }] },
+      taskType,
+      outputDimensionality: 768,
+    }),
   });
-  return result.embedding.values;
+
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error?.message ?? "Embedding request failed");
+  return data.embedding.values;
 }

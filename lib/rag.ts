@@ -1,4 +1,3 @@
-import { TaskType } from "@google/generative-ai";
 import { embedText } from "./gemini";
 import { supabaseAdmin } from "./supabase-admin";
 
@@ -42,7 +41,7 @@ export async function retrieveContext(
   topK = 5
 ): Promise<string> {
   // Embed the query using the RETRIEVAL_QUERY task type for better recall
-  const queryEmbedding = await embedText(query, TaskType.RETRIEVAL_QUERY);
+  const queryEmbedding = await embedText(query, "RETRIEVAL_QUERY");
 
   const { data, error } = await supabaseAdmin.rpc("match_course_embeddings", {
     query_embedding: queryEmbedding,

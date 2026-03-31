@@ -12,6 +12,7 @@ interface Material {
   file_size: number;
   indexed: boolean;
   uploaded_at: string;
+  signedUrl: string | null;
 }
 
 interface UploadState {
@@ -313,12 +314,21 @@ export default function MaterialsSection({ courseId, initialMaterials }: Props) 
               <span className="text-xl shrink-0">{fileIcon(mat.file_type)}</span>
 
               <div className="flex-1 min-w-0">
-                <p
-                  className="text-sm font-medium truncate"
-                  style={{ color: "#1a2b5e" }}
-                >
-                  {mat.file_name}
-                </p>
+                {mat.signedUrl ? (
+                  <a
+                    href={mat.signedUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm font-medium truncate block hover:underline"
+                    style={{ color: "#1a2b5e" }}
+                  >
+                    {mat.file_name}
+                  </a>
+                ) : (
+                  <p className="text-sm font-medium truncate" style={{ color: "#1a2b5e" }}>
+                    {mat.file_name}
+                  </p>
+                )}
                 <p className="text-xs text-gray-400 mt-0.5">
                   {humanSize(mat.file_size)} · {humanDate(mat.uploaded_at)}
                 </p>

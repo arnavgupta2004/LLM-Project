@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase-server";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 import { redirect, notFound } from "next/navigation";
 import ChatInterface from "@/components/student/ChatInterface";
 import CourseInfoPanel from "@/components/student/CourseInfoPanel";
@@ -47,9 +48,10 @@ export default async function StudentCourseDetailPage({ params }: Props) {
 
     supabase
       .from("course_materials")
-      .select("id, name, file_type, indexed")
+      .select("id, file_name, file_type, file_path, indexed")
       .eq("course_id", courseId)
-      .order("created_at"),
+      .eq("indexed", true)
+      .order("uploaded_at"),
 
     supabase
       .from("chat_messages")
@@ -61,7 +63,17 @@ export default async function StudentCourseDetailPage({ params }: Props) {
   ]);
 
   const units = unitsResult.data ?? [];
-  const materials = materialsResult.data ?? [];
+  const rawMaterials = materialsResult.data ?? [];
+
+  // Generate signed URLs for each material (1 hour expiry)
+  const materials = await Promise.all(
+    rawMaterials.map(async (mat) => {
+      const { data } = await supabaseAdmin.storage
+        .from("course-materials")
+        .createSignedUrl(mat.file_path ?? "", 3600);
+      return { ...mat, signedUrl: data?.signedUrl ?? null };
+    })
+  );
   const rawHistory = historyResult.data ?? [];
 
   const chatHistory = rawHistory.map((m) => ({

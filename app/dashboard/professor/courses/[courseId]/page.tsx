@@ -32,8 +32,9 @@ export default async function CourseDetailPage({ params }: Props) {
   const [materialsResult, submissionsResult] = await Promise.all([
     supabase
       .from("course_materials")
-      .select("id, file_name, file_type, file_size, indexed, uploaded_at")
+      .select("id, file_name, file_type, file_size, file_path, indexed, uploaded_at")
       .eq("course_id", courseId)
+      .eq("indexed", true)
       .order("uploaded_at", { ascending: false }),
 
     // Use admin client to read all students' submissions
@@ -44,7 +45,15 @@ export default async function CourseDetailPage({ params }: Props) {
       .order("created_at", { ascending: false }),
   ]);
 
-  const materials = materialsResult.data ?? [];
+  const rawMaterials = materialsResult.data ?? [];
+  const materials = await Promise.all(
+    rawMaterials.map(async (mat) => {
+      const { data } = await supabaseAdmin.storage
+        .from("course-materials")
+        .createSignedUrl(mat.file_path ?? "", 3600);
+      return { ...mat, signedUrl: data?.signedUrl ?? null };
+    })
+  );
 
   // Normalise the profiles join (Supabase returns array for to-one joins)
   const submissions = (submissionsResult.data ?? []).map((s) => ({

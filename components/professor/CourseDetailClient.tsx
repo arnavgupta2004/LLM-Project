@@ -7,11 +7,12 @@ import type { AiFeedback } from "@/components/student/FeedbackCard";
 
 interface Material {
   id: string;
-  name: string;
+  file_name: string;
   file_type: string;
   file_size: number;
   indexed: boolean;
-  created_at: string;
+  uploaded_at: string;
+  signedUrl: string | null;
 }
 
 interface Submission {

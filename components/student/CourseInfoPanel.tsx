@@ -19,9 +19,10 @@ interface AssessmentWeights {
 
 interface Material {
   id: string;
-  name: string;
+  file_name: string;
   file_type: string;
   indexed: boolean;
+  signedUrl: string | null;
 }
 
 interface Props {
@@ -234,12 +235,24 @@ export default function CourseInfoPanel({ course, units, materials }: Props) {
                 style={{ background: "#f3f4f8" }}
               >
                 <span className="text-sm shrink-0">{fileIcon(mat.file_type)}</span>
-                <span
-                  className="text-xs truncate flex-1 font-medium"
-                  style={{ color: "#1a2b5e" }}
-                >
-                  {mat.name}
-                </span>
+                {mat.signedUrl ? (
+                  <a
+                    href={mat.signedUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs truncate flex-1 font-medium hover:underline"
+                    style={{ color: "#1a2b5e" }}
+                  >
+                    {mat.file_name}
+                  </a>
+                ) : (
+                  <span
+                    className="text-xs truncate flex-1 font-medium"
+                    style={{ color: "#1a2b5e" }}
+                  >
+                    {mat.file_name}
+                  </span>
+                )}
                 {mat.indexed && (
                   <span
                     className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0"
