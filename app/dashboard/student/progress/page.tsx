@@ -10,13 +10,21 @@ export default async function MyProgressPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/auth");
 
-  // ── Struggle topics ──────────────────────────────────────────────────────
+  // ── Enrollments ─────────────────────────────────────────────────────────
+  const { data: myEnrollments } = await supabase
+    .from("enrollments")
+    .select("course_id")
+    .eq("student_id", user.id);
+
+  const courseIds = (myEnrollments ?? []).map((e) => e.course_id);
+
+  // ── Struggle topics (all, even count 1, from assessments/quizzes) ────────
   const { data: struggles } = await supabase
     .from("student_topic_struggles")
-    .select("topic, count")
+    .select("topic, count, course_id")
     .eq("student_id", user.id)
-    .gte("count", 3)
-    .order("count", { ascending: false });
+    .order("count", { ascending: false })
+    .limit(20);
 
   // ── Activity timeline: chat messages per day over last 14 days ───────────
   const since = new Date();
@@ -30,7 +38,6 @@ export default async function MyProgressPage() {
     .eq("role", "user")
     .gte("created_at", since.toISOString());
 
-  // Build a bucket for each of the last 14 days
   const dayMap: Record<string, number> = {};
   for (let i = 0; i < 14; i++) {
     const d = new Date();
@@ -43,17 +50,10 @@ export default async function MyProgressPage() {
   }
   const timeline = Object.entries(dayMap).map(([date, count]) => ({ date, count }));
 
-  // ── Class standing percentile ────────────────────────────────────────────
+  // ── Class standing percentile ─────────────────────────────────────────────
   let percentile = 50;
 
-  const { data: myEnrollments } = await supabase
-    .from("enrollments")
-    .select("course_id")
-    .eq("student_id", user.id);
-
-  if (myEnrollments?.length) {
-    const courseIds = myEnrollments.map((e) => e.course_id);
-
+  if (courseIds.length) {
     const { data: peers } = await supabaseAdmin
       .from("enrollments")
       .select("student_id")
@@ -62,29 +62,43 @@ export default async function MyProgressPage() {
     const peerIds = Array.from(new Set((peers ?? []).map((e) => e.student_id)));
 
     if (peerIds.length > 1) {
-      const { data: chatRows } = await supabaseAdmin
-        .from("chat_messages")
-        .select("student_id")
-        .in("course_id", courseIds)
-        .in("student_id", peerIds)
-        .eq("role", "user");
+      const [chatRows, subRows, asmRows] = await Promise.all([
+        supabaseAdmin
+          .from("chat_messages")
+          .select("student_id")
+          .in("course_id", courseIds)
+          .in("student_id", peerIds)
+          .eq("role", "user"),
+        supabaseAdmin
+          .from("submissions")
+          .select("student_id, overall_score")
+          .in("course_id", courseIds)
+          .in("student_id", peerIds)
+          .not("overall_score", "is", null),
+        supabaseAdmin
+          .from("assessment_submissions")
+          .select("student_id, ai_score, total_marks")
+          .in("course_id", courseIds)
+          .in("student_id", peerIds)
+          .eq("status", "evaluated")
+          .not("ai_score", "is", null),
+      ]);
 
       const interactionMap: Record<string, number> = {};
-      for (const row of chatRows ?? []) {
+      for (const row of chatRows.data ?? []) {
         interactionMap[row.student_id] = (interactionMap[row.student_id] ?? 0) + 1;
       }
 
-      const { data: subRows } = await supabaseAdmin
-        .from("submissions")
-        .select("student_id, overall_score")
-        .in("course_id", courseIds)
-        .in("student_id", peerIds)
-        .not("overall_score", "is", null);
-
       const scoreMap: Record<string, number[]> = {};
-      for (const row of subRows ?? []) {
+      for (const row of subRows.data ?? []) {
         if (!scoreMap[row.student_id]) scoreMap[row.student_id] = [];
         scoreMap[row.student_id].push(row.overall_score as number);
+      }
+      // Also factor in assessment scores
+      for (const row of asmRows.data ?? []) {
+        const pct = row.total_marks > 0 ? (row.ai_score / row.total_marks) * 100 : 0;
+        if (!scoreMap[row.student_id]) scoreMap[row.student_id] = [];
+        scoreMap[row.student_id].push(pct);
       }
 
       const scores = peerIds.map((id) => {
@@ -92,7 +106,7 @@ export default async function MyProgressPage() {
         const avgScore = scoreMap[id]?.length
           ? scoreMap[id].reduce((a, b) => a + b, 0) / scoreMap[id].length
           : 50;
-        return { id, combined: interactions * 0.5 + avgScore };
+        return { id, combined: interactions * 0.3 + avgScore * 0.7 };
       });
 
       const myScore = scores.find((s) => s.id === user.id)?.combined ?? 0;
@@ -101,18 +115,150 @@ export default async function MyProgressPage() {
     }
   }
 
+  // ── Assessment submissions ────────────────────────────────────────────────
+  const { data: mySubs } = courseIds.length
+    ? await supabaseAdmin
+        .from("assessment_submissions")
+        .select("id, assessment_id, ai_score, total_marks, rank, total_students, status, submitted_at, course_id")
+        .eq("student_id", user.id)
+        .eq("status", "evaluated")
+        .order("submitted_at", { ascending: false })
+    : { data: [] };
+
+  // ── Assessment & course details ───────────────────────────────────────────
+  const assessmentIds = (mySubs ?? []).map((s) => s.assessment_id);
+
+  const [assessmentDetails, courseDetails, allAssessments] = await Promise.all([
+    assessmentIds.length
+      ? supabaseAdmin
+          .from("assessments")
+          .select("id, title, type, course_id")
+          .in("id", assessmentIds)
+      : { data: [] },
+    courseIds.length
+      ? supabaseAdmin.from("courses").select("id, name, code").in("id", courseIds)
+      : { data: [] },
+    // Total assessments available per course (for completion rate)
+    courseIds.length
+      ? supabaseAdmin
+          .from("assessments")
+          .select("id, course_id")
+          .in("course_id", courseIds)
+      : { data: [] },
+  ]);
+
+  const assessmentMap: Record<string, { title: string; type: string; course_id: string }> = {};
+  for (const a of assessmentDetails.data ?? []) {
+    assessmentMap[a.id] = { title: a.title, type: a.type, course_id: a.course_id };
+  }
+  const courseMap: Record<string, { name: string; code: string }> = {};
+  for (const c of courseDetails.data ?? []) {
+    courseMap[c.id] = { name: c.name, code: c.code };
+  }
+
+  // ── Enrich assessment scores ──────────────────────────────────────────────
+  const assessmentScores = (mySubs ?? [])
+    .filter((s) => s.ai_score !== null)
+    .map((s) => ({
+      title: assessmentMap[s.assessment_id]?.title ?? "Assessment",
+      type: assessmentMap[s.assessment_id]?.type ?? "quiz",
+      courseName: courseMap[assessmentMap[s.assessment_id]?.course_id ?? ""]?.name ?? "Course",
+      courseCode: courseMap[assessmentMap[s.assessment_id]?.course_id ?? ""]?.code ?? "",
+      ai_score: s.ai_score as number,
+      total_marks: s.total_marks ?? 100,
+      rank: s.rank ?? null,
+      total_students: s.total_students ?? null,
+      submitted_at: s.submitted_at as string,
+    }));
+
+  // ── Course performance breakdown ──────────────────────────────────────────
+  const totalByCoursePub: Record<string, number> = {};
+  for (const a of allAssessments.data ?? []) {
+    totalByCoursePub[a.course_id] = (totalByCoursePub[a.course_id] ?? 0) + 1;
+  }
+
+  const coursePerformance = courseIds.map((cid) => {
+    // Group by course_id from mySubs
+    const subs = (mySubs ?? []).filter((s) => {
+      return assessmentMap[s.assessment_id]?.course_id === cid;
+    });
+    const scores = subs.map((s) =>
+      s.total_marks > 0 ? (s.ai_score / s.total_marks) * 100 : 0
+    );
+    const avgPct = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
+    return {
+      courseId: cid,
+      courseName: courseMap[cid]?.name ?? "Course",
+      courseCode: courseMap[cid]?.code ?? "",
+      submitted: subs.length,
+      total: totalByCoursePub[cid] ?? 0,
+      avgPct,
+    };
+  }).filter((c) => c.total > 0 || c.submitted > 0);
+
+  // ── Score trend: last 10 submissions ordered chronologically ─────────────
+  const scoreTrend = [...assessmentScores]
+    .sort((a, b) => new Date(a.submitted_at).getTime() - new Date(b.submitted_at).getTime())
+    .slice(-10)
+    .map((s) => ({
+      label: s.title.length > 15 ? s.title.slice(0, 15) + "…" : s.title,
+      pct: s.total_marks > 0 ? Math.round((s.ai_score / s.total_marks) * 100) : 0,
+      date: s.submitted_at,
+      type: s.type,
+    }));
+
+  // ── Overview stats ────────────────────────────────────────────────────────
+  const totalDone = assessmentScores.length;
+  const totalAvailable = Object.values(totalByCoursePub).reduce((a, b) => a + b, 0);
+  const completionRate = totalAvailable > 0 ? Math.round((totalDone / totalAvailable) * 100) : 0;
+  const avgScorePct =
+    assessmentScores.length > 0
+      ? Math.round(
+          assessmentScores.reduce(
+            (sum, s) => sum + (s.total_marks > 0 ? (s.ai_score / s.total_marks) * 100 : 0),
+            0
+          ) / assessmentScores.length
+        )
+      : null;
+  const bestScorePct =
+    assessmentScores.length > 0
+      ? Math.max(
+          ...assessmentScores.map((s) =>
+            s.total_marks > 0 ? Math.round((s.ai_score / s.total_marks) * 100) : 0
+          )
+        )
+      : null;
+
+  // Total chat messages
+  const { count: totalChats } = await supabase
+    .from("chat_messages")
+    .select("id", { count: "exact", head: true })
+    .eq("student_id", user.id)
+    .eq("role", "user");
+
   return (
     <div className="h-full overflow-y-auto p-8">
       <h1 className="text-2xl font-extrabold mb-1" style={{ color: "#1a2b5e" }}>
         My Progress
       </h1>
       <p className="text-gray-400 text-sm mb-6">
-        Track your learning activity and areas for improvement
+        A complete view of your academic performance and learning activity
       </p>
       <ProgressClient
-        struggles={struggles ?? []}
+        struggles={(struggles ?? []).map((s) => ({ topic: s.topic, count: s.count }))}
         percentile={percentile}
         timeline={timeline}
+        assessmentScores={assessmentScores}
+        coursePerformance={coursePerformance}
+        scoreTrend={scoreTrend}
+        overviewStats={{
+          avgScorePct,
+          bestScorePct,
+          totalDone,
+          totalAvailable,
+          completionRate,
+          totalChats: totalChats ?? 0,
+        }}
       />
     </div>
   );

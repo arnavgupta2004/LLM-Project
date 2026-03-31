@@ -3,6 +3,7 @@
 import { useState } from "react";
 import MaterialsSection from "./MaterialsSection";
 import ProfSubmissionsTab from "./ProfSubmissionsTab";
+import ProfAssessmentsTab from "./ProfAssessmentsTab";
 import type { AiFeedback } from "@/components/student/FeedbackCard";
 
 interface Material {
@@ -27,16 +28,51 @@ interface Submission {
   profiles: { full_name: string | null; email: string | null } | null;
 }
 
-interface Props {
-  courseId: string;
-  materials: Material[];
-  submissions: Submission[];
+interface AssessmentSubmission {
+  id: string;
+  ai_score: number | null;
+  total_marks: number | null;
+  rank: number | null;
+  total_students: number | null;
+  status: string;
+  submitted_at: string;
+  profiles: { full_name: string | null; email: string | null } | null;
 }
 
-type Tab = "materials" | "submissions";
+interface Assessment {
+  id: string;
+  title: string;
+  type: "quiz" | "assignment";
+  due_date: string | null;
+  total_marks: number;
+  created_at: string;
+  submissions: AssessmentSubmission[];
+}
 
-export default function CourseDetailClient({ courseId, materials, submissions }: Props) {
+interface Props {
+  courseId: string;
+  profId: string;
+  materials: Material[];
+  submissions: Submission[];
+  assessments: Assessment[];
+}
+
+type Tab = "materials" | "submissions" | "assessments";
+
+export default function CourseDetailClient({
+  courseId,
+  profId,
+  materials,
+  submissions,
+  assessments,
+}: Props) {
   const [tab, setTab] = useState<Tab>("materials");
+
+  const TAB_LABELS: Record<Tab, string> = {
+    materials: "📁 Materials",
+    submissions: "📋 Submissions",
+    assessments: "🧩 Assessments",
+  };
 
   return (
     <div>
@@ -45,18 +81,18 @@ export default function CourseDetailClient({ courseId, materials, submissions }:
         className="flex gap-1 p-1 rounded-xl mb-5"
         style={{ background: "#f0f3fb", width: "fit-content" }}
       >
-        {(["materials", "submissions"] as Tab[]).map((t) => (
+        {(["materials", "submissions", "assessments"] as Tab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className="px-5 py-2 rounded-lg text-sm font-semibold capitalize transition-all"
+            className="px-5 py-2 rounded-lg text-sm font-semibold transition-all"
             style={
               tab === t
                 ? { background: "#1a2b5e", color: "#ffffff" }
                 : { color: "#6b7280" }
             }
           >
-            {t === "materials" ? "📁 Materials" : "📋 Submissions"}
+            {TAB_LABELS[t]}
           </button>
         ))}
       </div>
@@ -71,6 +107,13 @@ export default function CourseDetailClient({ courseId, materials, submissions }:
         )}
         {tab === "submissions" && (
           <ProfSubmissionsTab initialSubmissions={submissions} />
+        )}
+        {tab === "assessments" && (
+          <ProfAssessmentsTab
+            courseId={courseId}
+            profId={profId}
+            assessments={assessments}
+          />
         )}
       </div>
     </div>

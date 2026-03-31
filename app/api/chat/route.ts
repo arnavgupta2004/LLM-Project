@@ -3,7 +3,7 @@ import { streamText } from "ai";
 import { createGroq } from "@ai-sdk/groq";
 import { retrieveContext, retrieveAllChunks } from "@/lib/rag";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { geminiFlash } from "@/lib/gemini";
+import { tagStruggleTopic } from "@/lib/struggle-tracker";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -57,46 +57,6 @@ COURSE CONTEXT (extracted from uploaded files):
 ${context.trim() || "No course materials have been indexed for this course yet."}`;
 }
 
-// Background: tag the topic of the student's question for analytics
-async function tagTopic(
-  courseId: string,
-  studentId: string,
-  question: string
-): Promise<void> {
-  try {
-    const result = await geminiFlash.generateContent(
-      `Given this student question: "${question.slice(0, 300)}"
-Return ONLY a single 2–5 word topic phrase (e.g. "neural network backpropagation"). No explanation, punctuation, or quotes. Just the phrase.`
-    );
-    const topic = result.response.text().trim().toLowerCase().replace(/[".]/g, "");
-    if (!topic || topic.length > 80) return;
-
-    const { data: existing } = await supabaseAdmin
-      .from("student_topic_struggles")
-      .select("id, count")
-      .eq("student_id", studentId)
-      .eq("course_id", courseId)
-      .eq("topic", topic)
-      .maybeSingle();
-
-    if (existing) {
-      await supabaseAdmin
-        .from("student_topic_struggles")
-        .update({ count: (existing.count ?? 0) + 1, last_seen_at: new Date().toISOString() })
-        .eq("id", existing.id);
-    } else {
-      await supabaseAdmin.from("student_topic_struggles").insert({
-        student_id: studentId,
-        course_id: courseId,
-        topic,
-        count: 1,
-        last_seen_at: new Date().toISOString(),
-      });
-    }
-  } catch (e) {
-    console.error("[tagTopic]", e);
-  }
-}
 
 // ── Route ───────────────────────────────────────────────────────────────────
 
@@ -200,7 +160,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Background topic tagging (non-blocking)
-        void tagTopic(courseId, studentId, lastUserMsg.content);
+        void tagStruggleTopic(courseId, studentId, lastUserMsg.content);
 
         resolveFinish(flagged);
       } catch (e) {

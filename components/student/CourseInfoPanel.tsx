@@ -71,14 +71,9 @@ export default function CourseInfoPanel({ course, units, materials }: Props) {
   };
 
   return (
-    <aside
-      className="flex flex-col h-full overflow-y-auto"
-      style={{
-        width: 340,
-        minWidth: 340,
-        borderLeft: "1px solid #e5eaf5",
-        background: "#fafbff",
-      }}
+    <div
+      className="flex flex-col"
+      style={{ background: "#fafbff" }}
     >
       {/* Course header */}
       <div
@@ -266,6 +261,6 @@ export default function CourseInfoPanel({ course, units, materials }: Props) {
           </div>
         )}
       </div>
-    </aside>
+    </div>
   );
 }

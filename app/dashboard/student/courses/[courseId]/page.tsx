@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 import { redirect, notFound } from "next/navigation";
 import ChatInterface from "@/components/student/ChatInterface";
 import CourseInfoPanel from "@/components/student/CourseInfoPanel";
+import StudentAssessmentsSection from "@/components/student/StudentAssessmentsSection";
 
 interface Props {
   params: Promise<{ courseId: string }>;
@@ -38,8 +39,8 @@ export default async function StudentCourseDetailPage({ params }: Props) {
 
   if (!course) notFound();
 
-  // Fetch units, materials, and chat history in parallel
-  const [unitsResult, materialsResult, historyResult] = await Promise.all([
+  // Fetch units, materials, chat history, and assessments in parallel
+  const [unitsResult, materialsResult, historyResult, assessmentsResult] = await Promise.all([
     supabase
       .from("course_units")
       .select("id, unit_number, title, hours, topics")
@@ -60,10 +61,30 @@ export default async function StudentCourseDetailPage({ params }: Props) {
       .eq("student_id", user.id)
       .order("created_at")
       .limit(100),
+
+    supabase
+      .from("assessments")
+      .select("id, title, type, description, due_date, total_marks, created_at")
+      .eq("course_id", courseId)
+      .order("created_at", { ascending: false }),
   ]);
 
   const units = unitsResult.data ?? [];
   const rawMaterials = materialsResult.data ?? [];
+  const assessments = assessmentsResult.data ?? [];
+
+  // Fetch student's submissions for these assessments
+  const assessmentIds = assessments.map((a) => a.id);
+  const myAssessmentSubs =
+    assessmentIds.length > 0
+      ? (
+          await supabaseAdmin
+            .from("assessment_submissions")
+            .select("id, assessment_id, ai_score, total_marks, rank, total_students, status")
+            .in("assessment_id", assessmentIds)
+            .eq("student_id", user.id)
+        ).data ?? []
+      : [];
 
   // Generate signed URLs for each material (1 hour expiry)
   const materials = await Promise.all(
@@ -97,12 +118,25 @@ export default async function StudentCourseDetailPage({ params }: Props) {
         />
       </div>
 
-      {/* RIGHT: Course info panel */}
-      <CourseInfoPanel
-        course={course}
-        units={units}
-        materials={materials}
-      />
+      {/* RIGHT: Course info panel + assessments */}
+      <div
+        className="flex flex-col overflow-y-auto"
+        style={{ width: 340, minWidth: 340, borderLeft: "1px solid #e5eaf5" }}
+      >
+        <CourseInfoPanel
+          course={course}
+          units={units}
+          materials={materials}
+        />
+        <div style={{ borderTop: "1px solid #e5eaf5" }}>
+          <StudentAssessmentsSection
+            assessments={assessments}
+            submissions={myAssessmentSubs}
+            studentId={user.id}
+            courseId={courseId}
+          />
+        </div>
+      </div>
     </div>
   );
 }

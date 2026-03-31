@@ -28,8 +28,8 @@ export default async function CourseDetailPage({ params }: Props) {
 
   if (!course) notFound();
 
-  // Fetch materials and submissions in parallel
-  const [materialsResult, submissionsResult] = await Promise.all([
+  // Fetch materials, submissions and assessments in parallel
+  const [materialsResult, submissionsResult, assessmentsResult] = await Promise.all([
     supabase
       .from("course_materials")
       .select("id, file_name, file_type, file_size, file_path, indexed, uploaded_at")
@@ -41,6 +41,12 @@ export default async function CourseDetailPage({ params }: Props) {
     supabaseAdmin
       .from("submissions")
       .select("id, title, status, overall_score, professor_score, professor_notes, ai_feedback, created_at, profiles!student_id(full_name, email)")
+      .eq("course_id", courseId)
+      .order("created_at", { ascending: false }),
+
+    supabaseAdmin
+      .from("assessments")
+      .select("id, title, type, due_date, total_marks, created_at")
       .eq("course_id", courseId)
       .order("created_at", { ascending: false }),
   ]);
@@ -60,6 +66,34 @@ export default async function CourseDetailPage({ params }: Props) {
     ...s,
     ai_feedback: s.ai_feedback as AiFeedback | null,
     profiles: Array.isArray(s.profiles) ? (s.profiles[0] ?? null) : s.profiles,
+  }));
+
+  // Fetch assessment submissions for all assessments
+  const rawAssessments = assessmentsResult.data ?? [];
+  const assessmentIds = rawAssessments.map((a) => a.id);
+  const assessmentSubsResult = assessmentIds.length > 0
+    ? await supabaseAdmin
+        .from("assessment_submissions")
+        .select("id, assessment_id, ai_score, total_marks, rank, total_students, status, submitted_at, profiles!student_id(full_name, email)")
+        .in("assessment_id", assessmentIds)
+        .order("submitted_at", { ascending: false })
+    : null;
+
+  const rawAssessmentSubs = assessmentSubsResult?.data ?? [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const assessmentSubsMap: Record<string, any[]> = {};
+  for (const sub of rawAssessmentSubs) {
+    const aid = sub.assessment_id;
+    if (!assessmentSubsMap[aid]) assessmentSubsMap[aid] = [];
+    assessmentSubsMap[aid]!.push(sub);
+  }
+
+  const assessments = rawAssessments.map((a) => ({
+    ...a,
+    submissions: (assessmentSubsMap[a.id] ?? []).map((s) => ({
+      ...s,
+      profiles: Array.isArray(s.profiles) ? (s.profiles[0] ?? null) : s.profiles,
+    })),
   }));
 
   const level = course.difficulty_level ?? "undergraduate";
@@ -125,8 +159,10 @@ export default async function CourseDetailPage({ params }: Props) {
       {/* Tabs */}
       <CourseDetailClient
         courseId={courseId}
+        profId={user.id}
         materials={materials}
         submissions={submissions as Parameters<typeof CourseDetailClient>[0]["submissions"]}
+        assessments={assessments as Parameters<typeof CourseDetailClient>[0]["assessments"]}
       />
     </div>
   );
