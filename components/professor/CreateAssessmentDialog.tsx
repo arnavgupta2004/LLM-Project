@@ -15,6 +15,8 @@ interface Question {
 interface Props {
   courseId: string;
   profId: string;
+  triggerLabel?: string;
+  defaultType?: "quiz" | "assignment";
 }
 
 const emptyQuestion = (): Question => ({
@@ -26,7 +28,12 @@ const emptyQuestion = (): Question => ({
   marks: 1,
 });
 
-export default function CreateAssessmentDialog({ courseId, profId }: Props) {
+export default function CreateAssessmentDialog({
+  courseId,
+  profId,
+  triggerLabel = "+ Create Assessment",
+  defaultType = "quiz",
+}: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<1 | 2>(1);
@@ -36,7 +43,7 @@ export default function CreateAssessmentDialog({ courseId, profId }: Props) {
   // Step 1 fields
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [type, setType] = useState<"quiz" | "assignment">("quiz");
+  const [type, setType] = useState<"quiz" | "assignment">(defaultType);
   const [dueDate, setDueDate] = useState("");
   const [totalMarks, setTotalMarks] = useState(100);
 
@@ -47,7 +54,7 @@ export default function CreateAssessmentDialog({ courseId, profId }: Props) {
     setStep(1);
     setTitle("");
     setDescription("");
-    setType("quiz");
+    setType(defaultType);
     setDueDate("");
     setTotalMarks(100);
     setQuestions([emptyQuestion()]);
@@ -150,7 +157,7 @@ export default function CreateAssessmentDialog({ courseId, profId }: Props) {
         className="px-4 py-2 rounded-xl text-sm font-semibold transition-colors"
         style={{ background: "#1a2b5e", color: "#ffffff" }}
       >
-        + Create Assessment
+        {triggerLabel}
       </button>
     );
   }
@@ -170,10 +177,14 @@ export default function CreateAssessmentDialog({ courseId, profId }: Props) {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-xl font-extrabold" style={{ color: "#1a2b5e" }}>
-              Create Assessment
+              {type === "assignment" ? "Request Assignment Submission" : "Create Quiz"}
             </h2>
             <p className="text-sm text-gray-400">
-              {step === 1 ? "Set up the basic details" : "Add quiz questions"}
+              {step === 1
+                ? type === "assignment"
+                  ? "Set up the assignment your students must submit"
+                  : "Set up the quiz details"
+                : "Add quiz questions"}
             </p>
           </div>
           <button
@@ -203,7 +214,7 @@ export default function CreateAssessmentDialog({ courseId, profId }: Props) {
                         : { borderColor: "#e5e7eb", background: "#fff", color: "#6b7280" }
                     }
                   >
-                    {t === "quiz" ? "🧩 Quiz (on-website)" : "📎 Assignment (PDF upload)"}
+                    {t === "quiz" ? "🧩 Quiz (take on website)" : "📎 Assignment Request (student PDF upload)"}
                   </button>
                 ))}
               </div>
@@ -231,6 +242,11 @@ export default function CreateAssessmentDialog({ courseId, profId }: Props) {
                 className={INPUT_STYLE}
                 style={INPUT_COLORS}
               />
+              {type === "assignment" && (
+                <p className="text-[11px] text-gray-400 mt-1">
+                  Students will see this as a professor-requested assignment and can upload a PDF submission.
+                </p>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -288,7 +304,7 @@ export default function CreateAssessmentDialog({ courseId, profId }: Props) {
                   className="flex-1 py-2.5 rounded-xl text-sm font-semibold"
                   style={{ background: "#1a2b5e", color: "#fff" }}
                 >
-                  {loading ? "Creating…" : "Create Assignment"}
+                  {loading ? "Creating…" : "Request Submission"}
                 </button>
               )}
             </div>

@@ -31,7 +31,7 @@ export default async function AnalyticsPage() {
 
   const courseIds = courses.map((c) => c.id);
 
-  const [enrollmentsResult, chatsResult, submissionsResult, assessmentsResult, unitsResult] =
+  const [enrollmentsResult, chatsResult, assessmentsResult, unitsResult] =
     await Promise.all([
       supabaseAdmin
         .from("enrollments")
@@ -42,11 +42,6 @@ export default async function AnalyticsPage() {
         .select("course_id, student_id, created_at")
         .in("course_id", courseIds)
         .eq("role", "user"),
-      supabaseAdmin
-        .from("submissions")
-        .select("course_id, student_id, overall_score")
-        .in("course_id", courseIds)
-        .not("overall_score", "is", null),
       supabaseAdmin
         .from("assessments")
         .select("id, title, type, course_id, total_marks")
@@ -60,7 +55,6 @@ export default async function AnalyticsPage() {
 
   const enrollments = enrollmentsResult.data ?? [];
   const chats = chatsResult.data ?? [];
-  const submissions = submissionsResult.data ?? [];
   const assessments = assessmentsResult.data ?? [];
   const units = unitsResult.data ?? [];
 
@@ -123,29 +117,19 @@ export default async function AnalyticsPage() {
         (c) => c.course_id === course.id && c.student_id === e.student_id
       ).length;
 
-      // Old submission scores
-      const studentSubs = submissions.filter(
-        (s) => s.course_id === course.id && s.student_id === e.student_id
-      );
-
       // Assessment submissions for this student in this course
       const studentAsmSubs = asmSubs.filter(
         (s) => s.student_id === e.student_id &&
           assessmentMap[s.assessment_id]?.course_id === course.id
       );
 
-      // Combined avg score (assessment submissions take priority, fall back to old submissions)
+      // Average score based on the active assessment submission system
       let avgScore: number | null = null;
       if (studentAsmSubs.length > 0) {
         const pcts = studentAsmSubs.map((s) =>
           (s.total_marks ?? 100) > 0 ? (s.ai_score / (s.total_marks ?? 100)) * 100 : 0
         );
         avgScore = Math.round(pcts.reduce((a, b) => a + b, 0) / pcts.length);
-      } else if (studentSubs.length > 0) {
-        avgScore = Math.round(
-          studentSubs.reduce((sum, s) => sum + ((s.overall_score as number) ?? 0), 0) /
-            studentSubs.length
-        );
       }
 
       const allStruggles = struggles

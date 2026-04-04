@@ -64,19 +64,13 @@ export default async function MyProgressPage() {
     const peerIds = Array.from(new Set((peers ?? []).map((e) => e.student_id)));
 
     if (peerIds.length > 1) {
-      const [chatRows, subRows, asmRows] = await Promise.all([
+      const [chatRows, asmRows] = await Promise.all([
         supabaseAdmin
           .from("chat_messages")
           .select("student_id")
           .in("course_id", courseIds)
           .in("student_id", peerIds)
           .eq("role", "user"),
-        supabaseAdmin
-          .from("submissions")
-          .select("student_id, overall_score")
-          .in("course_id", courseIds)
-          .in("student_id", peerIds)
-          .not("overall_score", "is", null),
         supabaseAdmin
           .from("assessment_submissions")
           .select("student_id, ai_score, total_marks")
@@ -92,11 +86,6 @@ export default async function MyProgressPage() {
       }
 
       const scoreMap: Record<string, number[]> = {};
-      for (const row of subRows.data ?? []) {
-        if (!scoreMap[row.student_id]) scoreMap[row.student_id] = [];
-        scoreMap[row.student_id].push(row.overall_score as number);
-      }
-      // Also factor in assessment scores
       for (const row of asmRows.data ?? []) {
         const pct = row.total_marks > 0 ? (row.ai_score / row.total_marks) * 100 : 0;
         if (!scoreMap[row.student_id]) scoreMap[row.student_id] = [];

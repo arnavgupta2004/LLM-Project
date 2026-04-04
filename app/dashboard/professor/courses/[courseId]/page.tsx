@@ -3,7 +3,6 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import CourseDetailClient from "@/components/professor/CourseDetailClient";
-import type { AiFeedback } from "@/components/student/FeedbackCard";
 
 interface Props {
   params: Promise<{ courseId: string }>;
@@ -28,21 +27,14 @@ export default async function CourseDetailPage({ params }: Props) {
 
   if (!course) notFound();
 
-  // Fetch materials, submissions and assessments in parallel
-  const [materialsResult, submissionsResult, assessmentsResult] = await Promise.all([
+  // Fetch materials and assessments in parallel
+  const [materialsResult, assessmentsResult] = await Promise.all([
     supabase
       .from("course_materials")
       .select("id, file_name, file_type, file_size, file_path, indexed, uploaded_at")
       .eq("course_id", courseId)
       .eq("indexed", true)
       .order("uploaded_at", { ascending: false }),
-
-    // Use admin client to read all students' submissions
-    supabaseAdmin
-      .from("submissions")
-      .select("id, title, status, overall_score, professor_score, professor_notes, ai_feedback, created_at, profiles!student_id(full_name, email)")
-      .eq("course_id", courseId)
-      .order("created_at", { ascending: false }),
 
     supabaseAdmin
       .from("assessments")
@@ -60,13 +52,6 @@ export default async function CourseDetailPage({ params }: Props) {
       return { ...mat, signedUrl: data?.signedUrl ?? null };
     })
   );
-
-  // Normalise the profiles join (Supabase returns array for to-one joins)
-  const submissions = (submissionsResult.data ?? []).map((s) => ({
-    ...s,
-    ai_feedback: s.ai_feedback as AiFeedback | null,
-    profiles: Array.isArray(s.profiles) ? (s.profiles[0] ?? null) : s.profiles,
-  }));
 
   // Fetch assessment submissions for all assessments
   const rawAssessments = assessmentsResult.data ?? [];
@@ -149,8 +134,8 @@ export default async function CourseDetailPage({ params }: Props) {
             </div>
             <div className="w-px" style={{ background: "#e5eaf5" }} />
             <div className="text-center">
-              <p className="text-2xl font-extrabold" style={{ color: "#1a2b5e" }}>{submissions.length}</p>
-              <p className="text-xs text-gray-400 mt-0.5">Submissions</p>
+              <p className="text-2xl font-extrabold" style={{ color: "#1a2b5e" }}>{assessments.length}</p>
+              <p className="text-xs text-gray-400 mt-0.5">Requests</p>
             </div>
           </div>
         </div>
@@ -161,7 +146,6 @@ export default async function CourseDetailPage({ params }: Props) {
         courseId={courseId}
         profId={user.id}
         materials={materials}
-        submissions={submissions as Parameters<typeof CourseDetailClient>[0]["submissions"]}
         assessments={assessments as Parameters<typeof CourseDetailClient>[0]["assessments"]}
       />
     </div>

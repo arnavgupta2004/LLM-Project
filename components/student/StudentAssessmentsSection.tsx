@@ -65,7 +65,7 @@ export default function StudentAssessmentsSection({
           className="text-[11px] font-bold uppercase tracking-wider mb-3"
           style={{ color: "#1a2b5e" }}
         >
-          Assessments
+          Quizzes & Requested Assignments
         </p>
 
         {assessments.length === 0 ? (
@@ -95,7 +95,7 @@ export default function StudentAssessmentsSection({
                               : { background: "#fef3c7", color: "#92400e" }
                           }
                         >
-                          {a.type === "quiz" ? "Quiz" : "Assignment"}
+                          {a.type === "quiz" ? "Quiz" : "Assignment Request"}
                         </span>
                         {due && (
                           <span
@@ -109,6 +109,11 @@ export default function StudentAssessmentsSection({
                       <p className="text-xs font-semibold truncate" style={{ color: "#1a2b5e" }}>
                         {a.title}
                       </p>
+                      {a.type === "assignment" && (
+                        <p className="text-[10px] text-gray-400 mt-1">
+                          Requested by professor
+                        </p>
+                      )}
                     </div>
 
                     {scored ? (
@@ -138,7 +143,7 @@ export default function StudentAssessmentsSection({
                       className="w-full py-1.5 rounded-lg text-xs font-semibold transition-colors"
                       style={{ background: "#1a2b5e", color: "#fff" }}
                     >
-                      {a.type === "quiz" ? "Take Quiz →" : "Submit Assignment →"}
+                      {a.type === "quiz" ? "Take Quiz →" : "Submit Requested Assignment →"}
                     </button>
                   ) : (
                     <div

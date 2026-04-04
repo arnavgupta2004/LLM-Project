@@ -2,9 +2,7 @@
 
 import { useState } from "react";
 import MaterialsSection from "./MaterialsSection";
-import ProfSubmissionsTab from "./ProfSubmissionsTab";
 import ProfAssessmentsTab from "./ProfAssessmentsTab";
-import type { AiFeedback } from "@/components/student/FeedbackCard";
 
 interface Material {
   id: string;
@@ -14,18 +12,6 @@ interface Material {
   indexed: boolean;
   uploaded_at: string;
   signedUrl: string | null;
-}
-
-interface Submission {
-  id: string;
-  title: string;
-  status: string;
-  overall_score: number | null;
-  professor_score: number | null;
-  professor_notes: string | null;
-  ai_feedback: AiFeedback | null;
-  created_at: string;
-  profiles: { full_name: string | null; email: string | null } | null;
 }
 
 interface AssessmentSubmission {
@@ -53,25 +39,22 @@ interface Props {
   courseId: string;
   profId: string;
   materials: Material[];
-  submissions: Submission[];
   assessments: Assessment[];
 }
 
-type Tab = "materials" | "submissions" | "assessments";
+type Tab = "materials" | "assessments";
 
 export default function CourseDetailClient({
   courseId,
   profId,
   materials,
-  submissions,
   assessments,
 }: Props) {
   const [tab, setTab] = useState<Tab>("materials");
 
   const TAB_LABELS: Record<Tab, string> = {
     materials: "📁 Materials",
-    submissions: "📋 Submissions",
-    assessments: "🧩 Assessments",
+    assessments: "🧩 Quizzes & Requests",
   };
 
   return (
@@ -81,7 +64,7 @@ export default function CourseDetailClient({
         className="flex gap-1 p-1 rounded-xl mb-5"
         style={{ background: "#f0f3fb", width: "fit-content" }}
       >
-        {(["materials", "submissions", "assessments"] as Tab[]).map((t) => (
+        {(["materials", "assessments"] as Tab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -104,9 +87,6 @@ export default function CourseDetailClient({
       >
         {tab === "materials" && (
           <MaterialsSection courseId={courseId} initialMaterials={materials} />
-        )}
-        {tab === "submissions" && (
-          <ProfSubmissionsTab initialSubmissions={submissions} />
         )}
         {tab === "assessments" && (
           <ProfAssessmentsTab

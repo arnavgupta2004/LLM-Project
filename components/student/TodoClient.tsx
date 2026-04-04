@@ -168,7 +168,7 @@ export default function TodoClient({ pending, completed, studentId }: Props) {
                             : { background: "#ede9fe", color: "#6d28d9" }
                         }
                       >
-                        {a.type === "quiz" ? "🧩 Quiz" : "📎 Assignment"}
+                        {a.type === "quiz" ? "🧩 Quiz" : "📎 Assignment Request"}
                       </span>
                       <span
                         className="text-[10px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1"
@@ -186,6 +186,11 @@ export default function TodoClient({ pending, completed, studentId }: Props) {
                       {a.title}
                     </p>
                     <p className="text-xs text-gray-500 mb-1">{a.courseName}</p>
+                    {a.type === "assignment" && (
+                      <p className="text-xs text-gray-500 mb-2">
+                        Professor requested a PDF submission for this assignment.
+                      </p>
+                    )}
 
                     {a.description && (
                       <p className="text-xs text-gray-500 mb-2 line-clamp-2">{a.description}</p>
@@ -207,7 +212,7 @@ export default function TodoClient({ pending, completed, studentId }: Props) {
                     className="shrink-0 px-4 py-2 rounded-xl text-sm font-semibold transition-all"
                     style={{ background: "#1a2b5e", color: "#fff" }}
                   >
-                    {a.type === "quiz" ? "Take Quiz" : "Submit"}
+                    {a.type === "quiz" ? "Take Quiz" : "Submit PDF"}
                   </button>
                 </div>
               </div>

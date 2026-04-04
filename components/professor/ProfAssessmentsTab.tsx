@@ -43,6 +43,8 @@ function formatDate(d: string | null) {
 
 export default function ProfAssessmentsTab({ courseId, profId, assessments }: Props) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const assignments = assessments.filter((item) => item.type === "assignment");
+  const quizzes = assessments.filter((item) => item.type === "quiz");
 
   function toggle(id: string) {
     setExpanded((prev) => {
@@ -57,13 +59,26 @@ export default function ProfAssessmentsTab({ courseId, profId, assessments }: Pr
       <div className="flex items-center justify-between mb-5">
         <div>
           <h3 className="text-base font-bold" style={{ color: "#1a2b5e" }}>
-            Assessments
+            Quizzes & Assignment Requests
           </h3>
           <p className="text-xs text-gray-400">
-            {assessments.length} assessment{assessments.length !== 1 ? "s" : ""} created
+            {assignments.length} assignment request{assignments.length !== 1 ? "s" : ""} · {quizzes.length} quiz{quizzes.length !== 1 ? "zes" : ""}
           </p>
         </div>
-        <CreateAssessmentDialog courseId={courseId} profId={profId} />
+        <div className="flex items-center gap-2">
+          <CreateAssessmentDialog
+            courseId={courseId}
+            profId={profId}
+            defaultType="assignment"
+            triggerLabel="+ Request Assignment"
+          />
+          <CreateAssessmentDialog
+            courseId={courseId}
+            profId={profId}
+            defaultType="quiz"
+            triggerLabel="+ Create Quiz"
+          />
+        </div>
       </div>
 
       {assessments.length === 0 ? (
@@ -71,12 +86,43 @@ export default function ProfAssessmentsTab({ courseId, profId, assessments }: Pr
           <p className="text-4xl mb-3">🧩</p>
           <p className="text-sm font-semibold text-gray-500">No assessments yet</p>
           <p className="text-xs text-gray-400 mt-1">
-            Create a quiz or assignment for your students.
+            Create a quiz or request an assignment submission from your students.
           </p>
         </div>
       ) : (
-        <div className="space-y-3">
-          {assessments.map((a) => {
+        <div className="space-y-6">
+          {[
+            {
+              title: "Assignment Requests",
+              subtitle: "Students can submit only after you request an assignment here.",
+              empty: "No assignment requests yet.",
+              items: assignments,
+            },
+            {
+              title: "Quizzes",
+              subtitle: "On-platform quizzes students can take directly.",
+              empty: "No quizzes yet.",
+              items: quizzes,
+            },
+          ].map((section) => (
+            <div key={section.title}>
+              <div className="mb-3">
+                <p className="text-sm font-bold" style={{ color: "#1a2b5e" }}>
+                  {section.title}
+                </p>
+                <p className="text-xs text-gray-400 mt-0.5">{section.subtitle}</p>
+              </div>
+
+              {section.items.length === 0 ? (
+                <div
+                  className="rounded-xl border border-dashed px-4 py-6 text-sm text-gray-400 text-center"
+                  style={{ borderColor: "#d8e1f0", background: "#fafbff" }}
+                >
+                  {section.empty}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {section.items.map((a) => {
             const isOpen = expanded.has(a.id);
             const avgScore =
               a.submissions.length > 0
@@ -109,7 +155,7 @@ export default function ProfAssessmentsTab({ courseId, profId, assessments }: Pr
                           : { background: "#fef3c7", color: "#92400e" }
                       }
                     >
-                      {a.type === "quiz" ? "🧩 Quiz" : "📎 Assignment"}
+                      {a.type === "quiz" ? "🧩 Quiz" : "📎 Assignment Request"}
                     </span>
                     <div className="min-w-0">
                       <p className="text-sm font-bold truncate" style={{ color: "#1a2b5e" }}>
@@ -118,6 +164,7 @@ export default function ProfAssessmentsTab({ courseId, profId, assessments }: Pr
                       <p className="text-xs text-gray-400">
                         {a.due_date ? `Due: ${formatDate(a.due_date)}` : "No due date"} ·{" "}
                         {a.total_marks} marks
+                        {a.type === "assignment" ? " · student PDF upload" : ""}
                       </p>
                     </div>
                   </div>
@@ -146,7 +193,9 @@ export default function ProfAssessmentsTab({ courseId, profId, assessments }: Pr
                   <div style={{ borderTop: "1px solid #e5eaf5" }}>
                     {a.submissions.length === 0 ? (
                       <p className="text-sm text-gray-400 text-center py-6">
-                        No submissions yet.
+                        {a.type === "assignment"
+                          ? "No student has submitted this requested assignment yet."
+                          : "No quiz submissions yet."}
                       </p>
                     ) : (
                       <div>
@@ -224,8 +273,12 @@ export default function ProfAssessmentsTab({ courseId, profId, assessments }: Pr
                   </div>
                 )}
               </div>
-            );
-          })}
+                  );
+                })}
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       )}
     </div>

@@ -41,21 +41,23 @@ export async function GET() {
     interactionMap[row.student_id] = (interactionMap[row.student_id] ?? 0) + 1;
   }
 
-  // Average submission scores
+  // Average assessment scores
   const { data: subRows } = await supabaseAdmin
-    .from("submissions")
-    .select("student_id, overall_score")
+    .from("assessment_submissions")
+    .select("student_id, ai_score, total_marks")
     .in("course_id", courseIds)
     .in("student_id", peerIds)
-    .not("overall_score", "is", null);
+    .eq("status", "evaluated")
+    .not("ai_score", "is", null);
 
   const scoreMap: Record<string, number[]> = {};
   for (const row of subRows ?? []) {
     if (!scoreMap[row.student_id]) scoreMap[row.student_id] = [];
-    scoreMap[row.student_id].push(row.overall_score as number);
+    const pct = row.total_marks > 0 ? (row.ai_score / row.total_marks) * 100 : 0;
+    scoreMap[row.student_id].push(pct);
   }
 
-  // Combined score: 0.5 * interactions + avg_submission_score
+  // Combined score: 0.5 * interactions + avg_assessment_score
   const scores = peerIds.map((id) => {
     const interactions = interactionMap[id] ?? 0;
     const avgScore =

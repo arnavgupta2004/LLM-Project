@@ -150,7 +150,7 @@ export default function TakeAssessmentDialog({ assessment, studentId, courseId, 
                     : { background: "#fef3c7", color: "#92400e" }
                 }
               >
-                {assessment.type === "quiz" ? "🧩 Quiz" : "📎 Assignment"}
+                {assessment.type === "quiz" ? "🧩 Quiz" : "📎 Assignment Request"}
               </span>
               <span className="text-xs text-gray-400">{assessment.total_marks} marks</span>
             </div>
@@ -159,6 +159,11 @@ export default function TakeAssessmentDialog({ assessment, studentId, courseId, 
             </h2>
             {assessment.description && (
               <p className="text-sm text-gray-500 mt-0.5">{assessment.description}</p>
+            )}
+            {assessment.type === "assignment" && (
+              <p className="text-xs text-gray-400 mt-1">
+                Your professor has requested a PDF submission for this assignment.
+              </p>
             )}
           </div>
           {phase !== "submitting" && (
@@ -265,7 +270,7 @@ export default function TakeAssessmentDialog({ assessment, studentId, courseId, 
             >
               <p className="text-3xl mb-2">📎</p>
               <p className="text-sm font-semibold mb-1" style={{ color: "#1a2b5e" }}>
-                Upload your assignment PDF
+                Upload your requested assignment PDF
               </p>
               <p className="text-xs text-gray-400 mb-4">AI will evaluate and score it instantly</p>
               <input
@@ -307,7 +312,7 @@ export default function TakeAssessmentDialog({ assessment, studentId, courseId, 
                 className="flex-1 py-3 rounded-xl text-sm font-semibold disabled:opacity-50"
                 style={{ background: "#1a2b5e", color: "#fff" }}
               >
-                Submit & Evaluate
+                Submit Requested Assignment
               </button>
             </div>
           </div>
