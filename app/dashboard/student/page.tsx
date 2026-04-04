@@ -40,12 +40,6 @@ export default async function StudentCoursesPage() {
 
   return (
     <div className="h-full overflow-y-auto p-8">
-      <h1 className="text-2xl font-extrabold mb-1" style={{ color: "#1a2b5e" }}>
-        My Courses
-      </h1>
-      <p className="text-gray-400 text-sm mb-6">
-        Browse the courses you are enrolled in
-      </p>
       <StudentCoursesGrid courses={courses} studentId={user.id} />
       <PageChatbot
         scope="student_courses"
