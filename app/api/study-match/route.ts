@@ -28,13 +28,21 @@ export async function POST(req: NextRequest) {
     
     // For presentation purposes in this mockup, we randomly generate peer profiles and matching logic
     // based on real profile data to represent AI matchmaking
-    const matches = peers.slice(0, 2).map((peer: Record<string, any>, index: number) => ({
-      studentId: peer.student_id,
-      name: peer.profiles?.full_name || `Classmate ${index + 1}`,
-      email: peer.profiles?.email || `student${index}@iiitdwd.ac.in`,
-      canHelpYouWith: myStruggle,
-      youCanHelpThemWith: index === 0 ? "Problem Solving" : "Programming Logic",
-    }));
+    interface PeerData {
+      student_id: string;
+      profiles: { full_name: string; email: string } | null;
+    }
+
+    const matches = peers.slice(0, 2).map((peerRaw: unknown, index: number) => {
+      const peer = peerRaw as PeerData;
+      return {
+        studentId: peer.student_id,
+        name: peer.profiles?.full_name || `Classmate ${index + 1}`,
+        email: peer.profiles?.email || `student${index}@iiitdwd.ac.in`,
+        canHelpYouWith: myStruggle,
+        youCanHelpThemWith: index === 0 ? "Problem Solving" : "Programming Logic",
+      };
+    });
 
     return NextResponse.json({ matches });
   } catch (error) {
