@@ -47,6 +47,26 @@ export default function StudentAssessmentsSection({
 }: Props) {
   const router = useRouter();
   const [activeAssessment, setActiveAssessment] = useState<Assessment | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const generateQuiz = async () => {
+    setIsGenerating(true);
+    try {
+      const res = await fetch("/api/assessments/micro", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ courseId, studentId }),
+      });
+      if (res.ok) {
+        router.refresh();
+      } else {
+        const errorData = await res.json();
+        alert("Quiz Generation Failed: " + (errorData.error || "Unknown Error"));
+      }
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   const subMap = submissions.reduce<Record<string, Submission>>((acc, s) => {
     acc[s.assessment_id] = s;
@@ -61,12 +81,22 @@ export default function StudentAssessmentsSection({
   return (
     <>
       <div className="px-5 py-4">
-        <p
-          className="text-[11px] font-bold uppercase tracking-wider mb-3"
-          style={{ color: "#1a2b5e" }}
-        >
-          Quizzes & Requested Assignments
-        </p>
+        <div className="flex flex-row items-center justify-between mb-3">
+          <p
+            className="text-[11px] font-bold uppercase tracking-wider"
+            style={{ color: "#1a2b5e" }}
+          >
+            Quizzes & Requested Assignments
+          </p>
+          <button
+            onClick={generateQuiz}
+            disabled={isGenerating}
+            className="text-[10px] font-bold px-2 py-1 rounded transition-colors disabled:opacity-50"
+            style={{ background: "#eef1f9", color: "#1a2b5e" }}
+          >
+            {isGenerating ? "Generating..." : "+ Auto Micro-Quiz"}
+          </button>
+        </div>
 
         {assessments.length === 0 ? (
           <p className="text-xs text-gray-400">No assessments yet.</p>
