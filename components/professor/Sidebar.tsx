@@ -3,14 +3,15 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
+import { BarChart3, BookOpen, CalendarDays, Flag } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import UserMenu from "@/components/shared/UserMenu";
 
 const NAV = [
-  { label: "My Courses", href: "/dashboard/professor", icon: "📚" },
-  { label: "Flagged Questions", href: "/dashboard/professor/flagged", icon: "🚩" },
-  { label: "Analytics", href: "/dashboard/professor/analytics", icon: "📊" },
-  { label: "Calendar", href: "/dashboard/professor/calendar", icon: "📅" },
+  { label: "My Courses", href: "/dashboard/professor", icon: BookOpen },
+  { label: "Flagged Questions", href: "/dashboard/professor/flagged", icon: Flag },
+  { label: "Analytics", href: "/dashboard/professor/analytics", icon: BarChart3 },
+  { label: "Calendar", href: "/dashboard/professor/calendar", icon: CalendarDays },
 ];
 
 interface Props {
@@ -57,6 +58,7 @@ export default function ProfessorSidebar({ fullName, avatarUrl }: Props) {
       <nav className="flex-1 px-3 py-4 space-y-1">
         {NAV.map((item) => {
           const active = pathname === item.href;
+          const Icon = item.icon;
           return (
             <Link
               key={item.href}
@@ -80,7 +82,7 @@ export default function ProfessorSidebar({ fullName, avatarUrl }: Props) {
                 }
               }}
             >
-              <span className="text-base">{item.icon}</span>
+              <Icon className="h-4 w-4 shrink-0" strokeWidth={2.1} />
               {item.label}
             </Link>
           );

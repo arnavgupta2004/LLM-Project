@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { Settings, UserCircle2 } from "lucide-react";
 
 interface UserMenuProps {
   fullName: string | null;
@@ -105,7 +106,7 @@ export default function UserMenu({
               className="flex items-center justify-between rounded-xl px-3 py-2 text-sm text-slate-700 transition-colors hover:bg-slate-100"
             >
               <span>Profile</span>
-              <span>👤</span>
+              <UserCircle2 className="h-4 w-4 text-slate-500" strokeWidth={2} />
             </Link>
             <Link
               href={`${basePath}/settings`}
@@ -113,7 +114,7 @@ export default function UserMenu({
               className="mt-1 flex items-center justify-between rounded-xl px-3 py-2 text-sm text-slate-700 transition-colors hover:bg-slate-100"
             >
               <span>Settings</span>
-              <span>⚙️</span>
+              <Settings className="h-4 w-4 text-slate-500" strokeWidth={2} />
             </Link>
           </div>
         </div>
