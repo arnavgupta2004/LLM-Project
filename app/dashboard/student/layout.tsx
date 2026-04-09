@@ -24,7 +24,10 @@ export default async function StudentLayout({
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
-      <StudentSidebar fullName={profile.full_name} />
+      <StudentSidebar
+        fullName={profile.full_name ?? user.user_metadata?.full_name ?? null}
+        avatarUrl={user.user_metadata?.avatar_url ?? null}
+      />
       {/* overflow-hidden so the chat page can manage its own scroll */}
       <main className="flex-1 overflow-hidden">{children}</main>
     </div>

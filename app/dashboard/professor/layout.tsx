@@ -24,7 +24,10 @@ export default async function ProfessorLayout({
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
-      <ProfessorSidebar fullName={profile.full_name} />
+      <ProfessorSidebar
+        fullName={profile.full_name ?? user.user_metadata?.full_name ?? null}
+        avatarUrl={user.user_metadata?.avatar_url ?? null}
+      />
       <main className="flex-1 overflow-y-auto">{children}</main>
     </div>
   );

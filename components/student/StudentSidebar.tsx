@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
+import UserMenu from "@/components/shared/UserMenu";
 
 const NAV = [
   { label: "My Courses", href: "/dashboard/student", icon: "📚" },
@@ -14,9 +15,10 @@ const NAV = [
 
 interface Props {
   fullName: string | null;
+  avatarUrl?: string | null;
 }
 
-export default function StudentSidebar({ fullName }: Props) {
+export default function StudentSidebar({ fullName, avatarUrl }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
@@ -25,11 +27,6 @@ export default function StudentSidebar({ fullName }: Props) {
     await supabase.auth.signOut();
     router.push("/auth");
   }
-
-  const initials = fullName
-    ? fullName.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase()
-    : "S";
-
   return (
     <aside
       className="flex flex-col h-full w-[240px] shrink-0"
@@ -93,23 +90,15 @@ export default function StudentSidebar({ fullName }: Props) {
 
       {/* User profile */}
       <div className="px-4 py-4 border-t border-white/10">
-        <div className="flex items-center gap-3 mb-3">
-          <div
-            className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-            style={{ background: "rgba(201,168,76,0.25)", color: "#c9a84c" }}
-          >
-            {initials}
-          </div>
-          <div className="min-w-0">
-            <p className="text-white text-xs font-semibold truncate">
-              {fullName ?? "Student"}
-            </p>
-            <p className="text-blue-300 text-[11px]">Student</p>
-          </div>
-        </div>
+        <UserMenu
+          fullName={fullName}
+          roleLabel="Student"
+          basePath="/dashboard/student"
+          avatarUrl={avatarUrl}
+        />
         <button
           onClick={signOut}
-          className="w-full text-xs text-blue-300 hover:text-white py-2 px-3 rounded-lg transition-colors text-left"
+          className="mt-3 w-full text-xs text-blue-300 hover:text-white py-2 px-3 rounded-lg transition-colors text-left"
           onMouseEnter={(e) =>
             ((e.currentTarget as HTMLElement).style.background =
               "rgba(255,255,255,0.08)")
